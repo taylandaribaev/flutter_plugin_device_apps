@@ -10,11 +10,13 @@ class DeviceApps {
   static Future<List<Application>> getInstalledApplications(
       {bool includeSystemApps: false,
       bool includeAppIcons: false,
-      bool onlyAppsWithLaunchIntent: false}) async {
+      bool onlyAppsWithLaunchIntent: false,
+      String filterByPackageName: ""}) async {
     return _channel.invokeMethod('getInstalledApps', {
       'system_apps': includeSystemApps,
       'include_app_icons': includeAppIcons,
-      'only_apps_with_launch_intent': onlyAppsWithLaunchIntent
+      'only_apps_with_launch_intent': onlyAppsWithLaunchIntent,
+      'filter_by_package_name': filterByPackageName
     }).then((apps) {
       if (apps != null && apps is List) {
         List<Application> list = new List();

@@ -58,7 +58,9 @@ public class DeviceAppsPlugin implements MethodCallHandler, PluginRegistry.ViewD
                 boolean systemApps = call.hasArgument("system_apps") && (Boolean) (call.argument("system_apps"));
                 boolean includeAppIcons = call.hasArgument("include_app_icons") && (Boolean) (call.argument("include_app_icons"));
                 boolean onlyAppsWithLaunchIntent = call.hasArgument("only_apps_with_launch_intent") && (Boolean) (call.argument("only_apps_with_launch_intent"));
-                fetchInstalledApps(systemApps, includeAppIcons, onlyAppsWithLaunchIntent, new InstalledAppsCallback() {
+                String filterByPackageName = call.argument("filter_by_package_name");
+
+                fetchInstalledApps(systemApps, includeAppIcons, onlyAppsWithLaunchIntent, filterByPackageName, new InstalledAppsCallback() {
                     @Override
                     public void onInstalledAppsListAvailable(final List<Map<String, Object>> apps) {
                         if (!activity.isFinishing()) {
@@ -101,12 +103,12 @@ public class DeviceAppsPlugin implements MethodCallHandler, PluginRegistry.ViewD
         }
     }
 
-    private void fetchInstalledApps(final boolean includeSystemApps, final boolean includeAppIcons, final boolean onlyAppsWithLaunchIntent, final InstalledAppsCallback callback) {
+    private void fetchInstalledApps(final boolean includeSystemApps, final boolean includeAppIcons, final boolean onlyAppsWithLaunchIntent, final String filterByPackageName, final InstalledAppsCallback callback) {
         asyncWork.run(new Runnable() {
 
             @Override
             public void run() {
-                List<Map<String, Object>> installedApps = getInstalledApps(includeSystemApps, includeAppIcons, onlyAppsWithLaunchIntent);
+                List<Map<String, Object>> installedApps = getInstalledApps(includeSystemApps, includeAppIcons, onlyAppsWithLaunchIntent, filterByPackageName);
 
                 if (callback != null) {
                     callback.onInstalledAppsListAvailable(installedApps);
@@ -116,7 +118,7 @@ public class DeviceAppsPlugin implements MethodCallHandler, PluginRegistry.ViewD
         });
     }
 
-    private List<Map<String, Object>> getInstalledApps(boolean includeSystemApps, boolean includeAppIcons, boolean onlyAppsWithLaunchIntent) {
+    private List<Map<String, Object>> getInstalledApps(boolean includeSystemApps, boolean includeAppIcons, boolean onlyAppsWithLaunchIntent, final String filterByPackageName) {
         PackageManager packageManager = activity.getPackageManager();
         List<PackageInfo> apps = packageManager.getInstalledPackages(0);
         List<Map<String, Object>> installedApps = new ArrayList<>(apps.size());
@@ -126,6 +128,10 @@ public class DeviceAppsPlugin implements MethodCallHandler, PluginRegistry.ViewD
                 continue;
             }
             if (onlyAppsWithLaunchIntent && packageManager.getLaunchIntentForPackage(pInfo.packageName) == null) {
+                continue;
+            }
+
+            if (!pInfo.packageName.contains(filterByPackageName)) {
                 continue;
             }
 
